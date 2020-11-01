@@ -1,66 +1,97 @@
-// Class for defining Person object
+/** This is the person class for the Poised project Management System
+ * 
+ * @author Natasha Lopez
+ * @version 2.0 28-Sep-2020
+ */
 
-// Declare attributes of the Person class
+/**
+ * Declare attributes of the Person class
+ */
 public class Person {
-	String userType;
-	String personName;
-	String telNo;
-	String email;
-	String personAddress;
+	private String personNum;
+	private String personType;
+	private String personName;
+	private String personTelNo;
+	private String personEmail;
+	private String personAddress;
 		
-	//Constructor method for class person
-	public Person(String userType, String personName, String telNo, String email, String personAddress) {
-		this.userType = userType;
+	/**
+	 * Constructor method for class person
+	 * @param personNum String variable for person's reference number
+	 * @param personType String variable for the person's role
+	 * @param personName String variable for the person's name
+	 * @param personTelNo String variable for the person's telephone number
+	 * @param personEmail String variable for the person's email address
+	 * @param personAddress String variable for the person's address
+	 */
+	public Person(String personNum, String personType, String personName, String personTelNo, String personEmail, String personAddress) {
+		this.personNum = personNum;
+		this.personType = personType;
 		this.personName = personName;
-		this.telNo = telNo;
-		this.email = email;
+		this.personTelNo = personTelNo;
+		this.personEmail = personEmail;
 		this.personAddress = personAddress;
 	}
 	
-	// Methods to get and set data from Person
-	public void setTelNo(String anyName) {
-		telNo = anyName;
+	public void setPersonNum(String personNum) {
+		this.personNum = personNum;
+	}
+
+	public void setPersonType(String personType) {
+		this.personType = personType;
 	}
 	
-	public void setEmail(String anyName) {
-		email = anyName;
+	public void setPersonName(String personName) {
+		this.personName = personName;
+	}
+
+	public void setPersonTelNo(String personTelNo) {
+		this.personTelNo = personTelNo;
+	}
+
+	public void setPersonEmail(String personEmail) {
+		this.personEmail = personEmail;
 	}
 	
-	public void setPersonAddress(String anyAddress) {
-		personAddress = anyAddress;
+	public void setPersonAddress(String personAddress) {
+		this.personAddress = personAddress;
 	}
 	
-	public String getUserType() {
-		return userType;
+	/**
+	 * Setter for private attributes of the Person class
+	 * @return the attributes
+	 */
+	public String getPersonNum() {
+		return personNum;
+	}
+	
+	public String getPersonType() {
+		return personType;
 	}
 	
 	public String getPersonName() {
 	      return personName;
 	   }
 	   
-	public String getTelNo() {
-	   return telNo;
+
+	public String getPersonTelNo() {
+	   return personTelNo;
    }
 	   
-	public String getEmail() {
-		return email;
+	public String getPersonEmail() {
+		return personEmail;
    }
    
 	public String getPersonAddress() {
 		return personAddress;
 	}
    
-	// Output of class
+	/** Person class string output
+	 * @return output String variable 
+	 */
 	public String toString() {
-		String output = "\nUser Type:" + userType;
-	    output += "\nName: " + personName;
-	    output += "\nTelephone number:" + telNo;
-	    output += "\nE-mail Address: " + email;
-	    output += "\nAddress: " + personAddress + "\n";
-	   
+		String output = personNum + "; " + personType + "; " + personName + "; " + personTelNo + "; " + personEmail + "; " 
+				+ personAddress + "\n";   
 	    return output;
 	}
-
 }
-
-
