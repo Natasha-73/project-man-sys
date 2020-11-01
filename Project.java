@@ -19,9 +19,9 @@ public class Project {
 	private String dueDate;
 	private String projStatus;
 	private String complDate;
-	private String contractor;
-	private String architect;
-	private String customer;
+	private String contractorID;
+	private String architectID;
+	private String customerID;
 		
 	/** Constructor method
 	 * 
@@ -35,12 +35,13 @@ public class Project {
 	 * @param dueDate String variable of the date that the project is due
 	 * @param projStatus String variable of the project status
 	 * @param complDate String variable of the project completion date
-	 * @param contractor String variable of the contract's name assigned to the project
-	 * @param architect String variable of the architect's name assigned to the project
-	 * @param customer String variable of the customer's name
+	 * @param contractorID String variable of the contract's name assigned to the project
+	 * @param architectID String variable of the architect's name assigned to the project
+	 * @param customerID String variable of the customer's name
 	 */
-	public Project (String projNum, String projName, String buildType, String projAddress, String erfNum, String totalFee, String paidToDate,
-			String dueDate, String projStatus, String complDate, String contractor, String architect, String customer) {
+	public Project (String projNum, String projName, String buildType, String projAddress, String erfNum, String totalFee, 
+			String paidToDate, String dueDate, String projStatus, String complDate, String contractorID, String architectID, 
+			String customerID) {
 		
 		this.projNum = projNum;
 		this.projName = projName;
@@ -52,9 +53,9 @@ public class Project {
 		this.dueDate = dueDate;
 		this.projStatus = projStatus;
 		this.complDate = complDate;
-		this.contractor = contractor;
-		this.architect = architect;
-		this.customer = customer;		
+		this.contractorID = contractorID;
+		this.architectID = architectID;
+		this.customerID = customerID;		
 	}
 
 	/**
@@ -101,16 +102,16 @@ public class Project {
 		return complDate;
 	}
 	
-	public String getContractor() {
-		return contractor;
+	public String getContractorID() {
+		return contractorID;
 	}
-	
-	public String getArchitect() {
-		return architect;
+
+	public String getArchitectID() {
+		return architectID;
 	}
-	
-	public String getCustomer() {
-		return customer;
+
+	public String getCustomerID() {
+		return customerID;
 	}
 	
 	/**
@@ -167,16 +168,16 @@ public class Project {
 		this.complDate = complDate;
 	}
 	
-	public void setCustomer(String customer) {
-		this.customer = customer;
+	public void setCustomer(String customerID) {
+		this.customerID = customerID;
 	}
 
-	public void setContractor(String contractor) {
-		this.contractor = contractor;
+	public void setContractor(String contractorID) {
+		this.contractorID = contractorID;
 	}
 
-	public void setArchitect(String architect) {
-		this.architect = architect;
+	public void setArchitect(String architectID) {
+		this.architectID = architectID;
 	}
 
 	/** Project class string output
@@ -184,8 +185,8 @@ public class Project {
 	 */
 	public String toString() {
 		String output = projNum + "; " + projName + "; " + buildType + "; " + projAddress + "; " + erfNum + "; " + totalFee 
-				+ "; " + paidToDate + "; " + dueDate + "; " + projStatus + "; " + complDate + "; " + contractor + "; "
-				+ architect + "; " + customer + "\n";
+				+ "; " + paidToDate + "; " + dueDate + "; " + projStatus + "; " + complDate + "; " + contractorID + "; "
+				+ architectID + "; " + customerID + "\n";
 	    
 	    return output;
 	}

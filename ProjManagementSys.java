@@ -1,5 +1,8 @@
-import java.io.File;
-import java.io.FileNotFoundException;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -18,7 +21,6 @@ public class ProjManagementSys {
 
 	public static void main(String[] args) {
 		/**
-		 * @exception InputMismatch
 		 * @exception RunTime
 		 * @exception Generic exception
 		 */
@@ -26,94 +28,104 @@ public class ProjManagementSys {
 			System.out.println("This program allows input of details for various projects and persons"
 					+ " associated with the project.");
 			
-			/**
-			 * Creates array lists for the projects and persons associated with the project 
+			/** Connect to poised_db using username: otheruser, password: swordfish
 			 */
+			Connection databaseConnection = DriverManager.getConnection(
+					"jdbc:mysql://localhost:3306/poised_db?useSSL=false",
+					"otheruser", "swordfish"
+					);
+			
+			Statement statementObject = databaseConnection.createStatement();
+			
+			
+			// Creates array lists for the projects and persons associated with the project 
+			 
 			ArrayList<Person> personArray = new ArrayList <Person> ();
 			ArrayList <Project> projectArray = new ArrayList <Project> ();
 			
-			/**
-			 * Reads text file for projects and persons info
-			 */
-			readProjFileMethod(projectArray);
-			readPersFileMethod(personArray);
 			
-			/**
-			 * Adds new project or new user objects to their respective arrays
-			 * <p>
-			 * Main Menu while loop allows the user to return to this main menu once each option is executed
-			 */
+			// Reads tables from the poised_db for projects and persons info
 			
+			readProjTableMethod(projectArray, statementObject);
+			readPersTableMethod(personArray, statementObject);
+			
+			
+			//Adds new project or new user objects to their respective arrays
+			 
+			// Main Menu while loop allows the user to return to this main menu once each option is executed
+			 			
 			Scanner anyInput = new Scanner(System.in);
 			while (true) {
 				System.out.println("\n*** MAIN MENU ***\nPlease enter \nnp - Add a new project \nnu - Add a new person's details \ndd - Update the project due date"
 					+ "\nf - Update the total amount of fees paid to date \ncd - Update person's contact details \nfp - Finalise project \n"
-					+ "vp - View projects Status \nq - quit");		
+					+ "vp - View projects Status \nq - quit");	
+				
 				String optionSelect = anyInput.nextLine();
 			
-				/**
-				 * Adds new user details to person array list
-				 */
+				
+				// Adds new user details to person array list
+				
 				if (optionSelect.equalsIgnoreCase("nu")) {			
-					addNewUser(anyInput, personArray);		
+					addNewUser(anyInput, personArray);						
 				}
 			
-				/**
-				 * Adds new project data to project array list
-				 */
+				
+				// Adds new project data to project array list
+				 
 				else if (optionSelect.equalsIgnoreCase("np")) {
-					addNewProject(anyInput, projectArray);		
+					addNewProject(anyInput, projectArray, personArray);		
 				}
-			
-				/**
-				 * Updates elements for this project
-				 * 
-				 * Updates due date for this project
-				 */
+						
+				 // UPDATES ELEMENTS OF THE PROJECT AND PERSONS
+				 
+				 // Updates due date for this project
 				 
 				else if (optionSelect.equalsIgnoreCase("dd")) {		
 					updateDueDateMethod(anyInput, projectArray);
 				}
 			
-				/**
-				 * Update fees paid to date for this project
-				 */
+				
+				// Update fees paid to date for this project
+				 
 				else if (optionSelect.equalsIgnoreCase("f")) {
 					updateFeePaidMethod(anyInput, projectArray);
 				}
 			
-				/**
-				 * Updates person's details - one detail can be updated and then the program returns to the main menu
-				 */
+				// Updates person's details - one detail can be updated and then the program returns to the main menu
+				 
 				else if (optionSelect.equalsIgnoreCase("cd")) {	
 					updateUserDetails(anyInput, personArray);		
 				}
 			
-				/**
-				 * Finalises this project and generates an invoice
-				 */
+				// Finalises this project and generates an invoice
+				 
 				else if (optionSelect.equalsIgnoreCase("fp")) {
 					finaliseProjectMethod(anyInput, personArray, projectArray);		
 				}
 				
-				/**
-				 * Shows all projects, incomplete projects and ongoing projects past due date
-				 */
+				
+				// Shows all projects, incomplete projects and ongoing projects past due date
+				
 				else if (optionSelect.equalsIgnoreCase("vp")) {
 					viewProjects(personArray, projectArray, anyInput);
 				}
+							
+				// Ends the program
+				// Gives the option to save changes to the database or exit without saving
 				
-				/**
-				 * Ends the program
-				 * Gives the option to save changes to text file or exit without saving
-				 */
 				else if (optionSelect.equalsIgnoreCase("q")) {
 					System.out.println("Would you like to save changes to the text files before exiting? Enter yes or no");				
 					String saveOption = anyInput.nextLine();
 					
 					if (saveOption.equalsIgnoreCase("yes")) {
-					writeToFiles(personArray, projectArray);
-					break;
+						
+						writeToPersonTable(statementObject, personArray);
+						
+						writeToProjTable(statementObject, projectArray);
+						
+						writeToErfNumTable(statementObject, projectArray);
+																									
+						break;
 					}
 					
 					else {
@@ -122,24 +134,11 @@ public class ProjManagementSys {
 				}
 			}
 			
-			anyInput.close();
-			
+			anyInput.close();			
 		}
 		
-		/**
-		 * Catch exceptions pertaining to variable type mismatch
-		 */
-		catch (InputMismatchException errorVar) {
-			System.out.println("Error, invalid input, a string was inputted instead of a number");
-			System.out.println();
-			System.out.println(errorVar.getMessage());
-			System.out.println();
-			errorVar.printStackTrace();	
-		}
+		// Catch any runtime exceptions
 
-		/**
-		 * Catch exceptions pertaining accessing output file
-		 */
 		catch (RuntimeException errorFile) {
 			System.out.println("Runtime Error.");
 			System.out.println();
@@ -148,9 +147,7 @@ public class ProjManagementSys {
 			errorFile.printStackTrace();
 		}
 		
-		/**
-		 * Catch any unforeseen exceptions not captured by the previous exceptions
-		 */
+		// Catch any unforeseen exceptions
 		catch (Exception errorFile) {
 			System.out.println("Unforeseen Error!");
 			System.out.println();
@@ -160,75 +157,164 @@ public class ProjManagementSys {
 		}	
 	}
 
-	// *******************************************************************************************************************
-	// ***************************************** METHODS *****************************************************************	
-	
+	//********************************************************************************************************************
+	//*********************************************************METHODS****************************************************
 	/**
-	 * Reads person text file and puts into the Person Array list
-	 * @param personArray String array list for person object details
+	 * Writes data from the project array to the erfNum table in the database
+	 * @param statementObject Object inside of the connection
+	 * @param projectArray String array list for person object details
+	 * @throws SQLException Provides information of database access error
 	 */
-	private static void readPersFileMethod(ArrayList<Person> personArray) {
-		try {
-			/**
-			 * Reads person text file. Requires update to location of file
-			 */
-			File personFile = new File("C:\\Users\\Tash\\Documents\\Software Engineering bootcamp\\"
-					+ "Introduction to Software engineering\\Task 24\\persons.txt\\");
-			
-			Scanner readPersonFile = new Scanner(personFile);
-			
-			while (readPersonFile.hasNextLine()) {
-				String tempPersonString = readPersonFile.nextLine();
-				String [] splitPersonArray = tempPersonString.split("; ");
-								
-				Person readPersonObject = new Person (splitPersonArray[0], splitPersonArray[1], splitPersonArray[2], 
-						splitPersonArray[3], splitPersonArray[4], splitPersonArray[5]);
+	private static void writeToErfNumTable(Statement statementObject, ArrayList<Project> projectArray)
+			throws SQLException {
+		String deleteRows = "DELETE FROM erfNumTable";
+		statementObject.executeUpdate(deleteRows);
 				
-				personArray.add(readPersonObject);
-			}
-			readPersonFile.close();
-		}
-		
-		catch (FileNotFoundException e) {
-			System.out.println("Error, file cannot be opened or found.");
-			System.out.println();
-			System.out.println(e.getMessage());
-			System.out.println();
-			e.printStackTrace();
+		for (Project i: projectArray) {
+			
+			String erfNumTableData = "INSERT INTO erfNumTable VALUES ("
+					+ "'"+i.getProjAddress()+"',"
+					+ "'"+i.getErfNum()+"')";
+
+			statementObject.executeUpdate(erfNumTableData);
 		}
 	}
 
 	/**
-	 * Reads project text file and stores into project Array list
-	 * @param projectArray String Array list which stores project details
+	 * Writes data from the project array to the project table in the database
+	 * @param statementObject Object inside of the connection
+	 * @param projectArray String array list for person object details
+	 * @throws SQLException Provides information of database access error
 	 */
-	private static void readProjFileMethod(ArrayList<Project> projectArray) {
+	private static void writeToProjTable(Statement statementObject, ArrayList<Project> projectArray)
+			throws SQLException {
+		String deleteRows = "DELETE FROM projectTable";
+		statementObject.executeUpdate(deleteRows);
+				
+		for (Project i: projectArray) {
+			
+			String projTableData = "INSERT INTO projectTable VALUES ("
+					+ "'"+ i.getProjNum()+"',"
+					+ "'"+ i.getProjName()+"',"
+					+ "'"+ i.getBuildType()+"', "
+					+ "'"+ i.getProjAddress()+"', "
+					+ "'"+ i.getTotalFee()+"', "
+					+ "'"+ i.getPaidToDate()+"', "
+					+ "'"+ i.getDueDate()+"', "
+					+ "'"+ i.getProjStatus()+"', "
+					+ "'"+ i.getComplDate()+"', "
+					+ "'"+ i.getContractorID()+"', "
+					+ "'"+ i.getArchitectID()+"', "
+					+ "'"+ i.getCustomerID()+"')";
+
+			statementObject.executeUpdate(projTableData);
+		}
+	}
+
+	/**
+	 * Writes data from the person array to the person table within the database
+	 * @param statementObject Object inside of the connection
+	 * @param personArray String array list for person object details
+	 * @throws SQLException Provides information of database access error
+	 */
+	private static void writeToPersonTable(Statement statementObject, ArrayList<Person> personArray) throws SQLException {
+		String deleteRows = "DELETE FROM personTable";
+		statementObject.executeUpdate(deleteRows);
+		
+		for (Person i: personArray) {
+			
+			String personData = "INSERT INTO personTable VALUES ("
+					+ "'"+ i.getPersonNum() +"', "
+					+ "'"+ i.getPersonType() +"', "
+					+ "'"+ i.getPersonName() +"', "
+					+ "'"+ i.getPersonTelNo() +"', "
+					+ "'"+ i.getPersonEmail() +"', "
+					+ "'"+ i.getPersonAddress() +"')";
+
+			statementObject.executeUpdate(personData);
+		}
+	}	
+
+	/**
+	 * Reads personTable from the poised database and puts into the Person Array list
+	 * @param personArray String array list for person object details
+	 * @param statementObject Object inside of the connection 
+	 */
+	private static void readPersTableMethod(ArrayList<Person> personArray, Statement statementObject) {
+		try {
+
+			ResultSet queryResults = statementObject.executeQuery("SELECT * FROM personTable");
+			
+			while (queryResults.next()) {
+					
+				Person personObject = new Person(
+						queryResults.getString("personID"), 
+						queryResults.getString("personType"),
+						queryResults.getString("personName"), 
+						queryResults.getString("personTelNo"), 
+						queryResults.getString("personEmail"), 
+						queryResults.getString("personAddress"));
+				personArray.add(personObject);
+			}	
+		}	
+		catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	/**
+	 * Reads project table from the Poised database and stores into the project Array list
+	 * @param projectArray String Array list which stores project details
+	 * @param statementObject Object inside of the connection
+	 */
+	private static void readProjTableMethod(ArrayList<Project> projectArray, Statement statementObject) {
 		
 		try {
-			File projectFile = new File("C:\\Users\\Tash\\Documents\\Software Engineering bootcamp\\"
-					+ "Introduction to Software engineering\\Task 24\\projects.txt\\");
 			
-			Scanner readProjectFile = new Scanner(projectFile);
-	
-			while (readProjectFile.hasNextLine()) {
-				String tempPersonString = readProjectFile.nextLine();
-				String [] splitPersonArray = tempPersonString.split("; ");
+			// Selects attributes from related tables in the Poised database
+			String selectQuery = "SELECT projNum, "
+					+ "projName, "
+					+ "buildType, "
+					+ "projectTable.projAddress, "
+					+ "erfNumTable.erfNum, "
+					+ "totalFee, "
+					+ "paidToDate, "
+					+ "dueDate, "
+					+ "status, "
+					+ "complDate,"
+					+ "contractID, "
+					+ "architectID, "
+					+ "customerID "
+					+ "FROM projectTable ";
+					
+			String joinQuery = "INNER JOIN erfNumTable ON projectTable.projAddress = erfNumTable.projAddress ";
+							
+			ResultSet queryResults = statementObject.executeQuery(selectQuery + joinQuery);		
+			
+			// Writes to array list
+			while (queryResults.next()) {
 				
-				Project readProjectObject = new Project(splitPersonArray[0], splitPersonArray[1], splitPersonArray[2], splitPersonArray[3], splitPersonArray[4],
-						splitPersonArray[5], splitPersonArray[6], splitPersonArray[7], splitPersonArray[8], splitPersonArray[9], splitPersonArray[10],
-						splitPersonArray[11], splitPersonArray[12]);
-				
-				projectArray.add(readProjectObject);
-			}
-			readProjectFile.close();
+				Project projectObject = new Project(
+						queryResults.getString("projNum"), 
+						queryResults.getString("projName"), 
+						queryResults.getString("buildType"), 
+						queryResults.getString("projAddress"), 
+						queryResults.getString("erfNum"), 
+						queryResults.getString("totalFee"), 
+						queryResults.getString("paidToDate"),
+						queryResults.getString("dueDate"), 
+						queryResults.getString("status"), 
+						queryResults.getString("complDate"),
+						queryResults.getString("contractID"), 
+						queryResults.getString("architectID"), 
+						queryResults.getString("customerID"));
+				projectArray.add(projectObject);
+				}
 		}
-		
-		catch (FileNotFoundException e) {
-			System.out.println("Error, file cannot be opened or found.");
-			System.out.println();
-			System.out.println(e.getMessage());
-			System.out.println();
+			
+		catch (SQLException e) {
 			e.printStackTrace();
+			System.out.println(e.getMessage());
 		}
 	}
 	
@@ -268,12 +354,13 @@ public class ProjManagementSys {
 	 * Adds a new project to project array list
 	 * @param anyInput String variable for any input
 	 * @param projectArray String array list for project object details
+	 * @param personArray String array of all persons associated with the project
 	 */
-	private static void addNewProject(Scanner anyInput, ArrayList<Project> projectArray) {
+	private static void addNewProject(Scanner anyInput, ArrayList<Project> projectArray, ArrayList<Person> personArray) {
 		
-		/**
-		 * Method generates a project number which is next in sequence after the previous project number
-		 */
+		
+		// Method generates a project number which is next in sequence after the previous project number
+		
 		int projArrayLen = projectArray.size();
 		int newProjNum = projArrayLen + 1;
 		String projNum = Integer.toString(newProjNum);
@@ -307,21 +394,73 @@ public class ProjManagementSys {
 		System.out.println("Enter the contractor (firstname and surname) assigned to the project: ");
 		String newContractor = anyInput.nextLine();
 		
-		System.out.println("Enter the architect firstname and surname) assigned to the project: ");
+		// Checks if person exists in the database, retrieves person (Contractor, Architect and Customer) number, 
+		// if not asks the user to input person details
+		String newContractorID = "";
+		for (Person i: personArray) {
+
+			if (newContractor.equalsIgnoreCase(i.getPersonName())) {				
+				newContractorID = i.getPersonNum();
+				break;
+			}
+		}
+		
+		if (newContractorID.equals("")) {
+			System.out.println("Contractor doesn't exist in the database, please add person name and details");
+			addNewUser(anyInput, personArray);
+			int intContractorID = personArray.size();
+			newContractorID = Integer.toString(intContractorID);
+		}
+				
+		System.out.println("Enter the architect firstname and surname assigned to the project: ");
 		String newArchitect = anyInput.nextLine();
+		
+		String newArchitectID = "";
+		
+		for (Person i: personArray) {
+			if (newArchitect.equalsIgnoreCase(i.getPersonName())) {					
+				newArchitectID = i.getPersonNum();
+				break;
+			}			
+		}
+		
+		if (newArchitectID.equals("")) {	
+			System.out.println("Architect doesn't exist in the database, please add person name and details");
+			addNewUser(anyInput, personArray);
+			int intArchitectID = personArray.size();
+			newArchitectID = Integer.toString(intArchitectID);						
+		}		
 		
 		System.out.println("Enter the customer's firstname and surname: ");
 		String newCustomer = anyInput.nextLine();
+		
+		String newCustomerID = "";
+												
+		for (Person i: personArray) {
+			
+			if (newCustomer.equalsIgnoreCase(i.getPersonName())) {
+				newCustomerID = i.getPersonNum();
+				break;
+			}
+		}
+		
+		if (newCustomerID.equals("")){
+			System.out.println("Person doesn't exist in the database, please add person name and details");
+			addNewUser(anyInput, personArray);
+			int intCustomerID = personArray.size();
+			newCustomerID = Integer.toString(intCustomerID);
+		}
+		
 		String [] splitCustomer = newCustomer.split(" ");
-					
-		/**
-		 * Gives this project a title if a title isn't entered by the user, building type and Surname of customer used
-		 */
+							
+		// Gives this project a title if a title isn't entered by the user, building type and Surname of customer used
 		if (newProjName.equalsIgnoreCase("")) {
 			newProjName = newBuildType + " " + splitCustomer[1];
 		}
 
-		Project projectData = new Project(projNum, newProjName, newBuildType, newProjAddress, newErfNum, newTotalFee, newPaidToDate, newDueDate, status, newComplDate, newContractor, newArchitect, newCustomer);
+		Project projectData = new Project(projNum, newProjName, newBuildType, newProjAddress, newErfNum, 
+				newTotalFee, newPaidToDate, newDueDate, status, newComplDate, newContractorID, newArchitectID, 
+				newCustomerID);
 		
 		projectArray.add(projectData);	
 		System.out.println("New project added.");
@@ -389,23 +528,17 @@ public class ProjManagementSys {
 		System.out.println("User detail to be updated \ntn - Telephone number \nea - Email address \na - Address");
 		String updateDetail = anyInput.nextLine();
 
-		/**
-		 * Updates person's telephone number
-		 */
+		// Updates person's telephone number	 
 		if (updateDetail.equalsIgnoreCase("tn")) {
 			updateTelNoMethod(anyInput, personArray, personIdenChoice);
 		}
-		
-		/**
-		 * Updates person's e-mail address
-		 */
+			
+		 // Updates person's e-mail address
 		else if (updateDetail.equalsIgnoreCase("ea")) {
 			updateEmailAddMethod(anyInput, personArray, personIdenChoice);
 		}
-		
-		/**
-		 * Updates Contractor's address
-		 */
+
+		// Updates Contractor's address
 		else if (updateDetail.equalsIgnoreCase("a")) {
 			updateAddressMethod(anyInput, personArray, personIdenChoice);
 		}
@@ -427,7 +560,7 @@ public class ProjManagementSys {
 				break;
 			}
 		}
-		System.out.println("Address updated ");
+		System.out.println("Address updated. ");
 	}
 
 	/**
@@ -479,9 +612,7 @@ public class ProjManagementSys {
 		ArrayList<Project> projectArray) {
 		displayProject(projectArray);
 		
-		System.out.println("Please ensure that the customer details are stored in the management system before finalising"
-				+ " the project.");
-		System.out.println("Choose the project (by project number) that you would like to update.");
+		System.out.println("Choose the project (by project number) that you would like to finalise.");
 		String projChoice = anyInput.nextLine();
 
 		System.out.println("Enter the completion date in the format yyyy-MM-dd: ");
@@ -495,70 +626,8 @@ public class ProjManagementSys {
 			}
 		}
 		
-		/**
-		 * Generate invoice, if there is no outstanding balance, prints a statement that no invoice is required		
-		 */
-		generateInvoice(personArray, projectArray, projChoice);
-		
-		/**
-		 * Writes the finalised project to a text file
-		 */
-		writeComplProjectFile(projectArray, personArray, projChoice);	
-	}
-
-	/**
-	 * Writes details of the finalised project (including person details) to a text file called Completed Project
-	 * @param projectArray String array list for project object details
-	 * @param personArray String array list for person object details
-	 * @param projChoice String variable of inputed project choice
-	 */
-	private static void writeComplProjectFile(ArrayList<Project> projectArray, ArrayList<Person> personArray, String projChoice) {
-		try {
-		Formatter projectComplFile = new Formatter("C:\\Users\\Tash\\Documents\\Software Engineering bootcamp"
-				+ "\\Introduction to Software engineering\\Task 24\\CompletedProject.txt\\");
-	
-			for (Project i: projectArray) {
-				if (i.getProjNum().equals(projChoice)) {
-					
-					projectComplFile.format("Project number: "+ i.getProjNum() + "\nProject name: "+ i.getProjName() 
-						+ "\nBuilding Type: " + i.getBuildType() + "\nBuilding address: " + i.getProjAddress() 
-						+ "\nERF number: " + i.getErfNum() + "\nTotal Fee: " + i.getTotalFee() + "\nFees paid to date: "
-						+ i.getPaidToDate() + "\nProject due date: " + i.getDueDate() + "\nProject status: " 
-						+ i.getProjStatus() + "\nCompletion Date: " + i.getComplDate() + "\nContractor: " + i.getContractor()
-						+ "\nArchitect: " + i.getArchitect() + "\nCustomer: " + i.getCustomer() + "\n");
-					
-					/**
-					 * Writes persons associated with the project to the Completed Project file
-					 */
-					for (Person j: personArray) {
-						if (i.getContractor().equals(j.getPersonName())) {
-							projectComplFile.format("\nPerson Type: " + j.getPersonType() + "\nName: " + j.getPersonName()
-							+ "\nTel no.: " + j.getPersonTelNo() + "\nE-mail Address: " + j.getPersonEmail() 
-							+ "\nAddress: " + j.getPersonAddress() + "\n");
-						}
-						else if (i.getArchitect().equals(j.getPersonName())) {
-							projectComplFile.format("\nPerson Type: " + j.getPersonType() + "\nName: " + j.getPersonName()
-							+ "\nTel no.: " + j.getPersonTelNo() + "\nE-mail Address: " + j.getPersonEmail() 
-							+ "\nAddress: " + j.getPersonAddress() + "\n");
-						}
-						else if (i.getCustomer().equals(j.getPersonName())) {
-							projectComplFile.format("\nPerson Type: " + j.getPersonType() + "\nName: " + j.getPersonName()
-							+ "\nTel no.: " + j.getPersonTelNo() + "\nE-mail Address: " + j.getPersonEmail() 
-							+ "\nAddress: " + j.getPersonAddress() + "\n");
-						}
-					}
-				}			
-			}
-			projectComplFile.close();
-		}
-		
-		catch(FileNotFoundException e) {
-			System.out.println("File cannot be opened or not found.");
-			System.out.println();
-			System.out.println(e.getMessage());
-			System.out.println();
-			e.printStackTrace();
-		}
+		//Generate invoice, if there is no outstanding balance, prints a statement that no invoice is required		
+		generateInvoice(personArray, projectArray, projChoice);	
 	}
 	
 	/** 
@@ -571,20 +640,21 @@ public class ProjManagementSys {
 	private static void generateInvoice(ArrayList<Person> personArray, ArrayList<Project> projectArray, 
 			String projChoice) {
 		for (Project i: projectArray) {
-			if (i.getProjNum().equals(projChoice)) {
+			if (i.getProjNum().equals(projChoice)) {				
 				if (i.getFeeBalance() == 0) {
 					System.out.println("No balance outstanding, no invoice generated");
 					break;
 				}
-				
-				/**
-				 * Get customer's name and outstanding balance for the invoice
-				 */
-				for (Person j: personArray) {
-					if (i.getCustomer().equals(j.getPersonName())) {
+							
+				// Get customer's name and outstanding balance for the invoice			
+				for (Person j: personArray) {				
+					if (i.getCustomerID().equals(j.getPersonNum())) {
 						System.out.println("INVOICE:\n");
-						System.out.println("Name: " + j.getPersonName() + "\nTel no.: " + j.getPersonTelNo()
-						+ "\nE-mail Address: " + j.getPersonEmail() + "\nAddress: " + j.getPersonAddress() + "\n");
+						System.out.println("Name: " + j.getPersonName() 
+						+ "\nTel no.: " + j.getPersonTelNo()
+						+ "\nE-mail Address: " + j.getPersonEmail() 
+						+ "\nAddress: " + j.getPersonAddress() + "\n");
+						
 						System.out.println("Outstanding balance = £" + String.format("%.2f", i.getFeeBalance()) + "\n");							
 					}	
 				}					
@@ -593,29 +663,41 @@ public class ProjManagementSys {
 	}
 	
 	/**
-	 * Display details of contractors, architects and customers
+	 * Displays details of contractors, architects and customers
 	 * @param personArray String array list for person object details
 	 */
 	private static void displayPerson(ArrayList<Person> personArray) {
 		for (Person i: personArray) {
-			System.out.println("Person Identifier no: " + i.getPersonNum() + "\nPerson Type: " + i.getPersonType()
-				+ "\nName: " + i.getPersonName() + "\nTel no.: " + i.getPersonTelNo()+ "\nE-mail Address: " 
-				+ i.getPersonEmail() + "\nAddress: " + i.getPersonAddress() + "\n");	
+			System.out.println(
+				"Person Identifier no: " + i.getPersonNum() 
+				+ "\nPerson Type: " + i.getPersonType()
+				+ "\nName: " + i.getPersonName() 
+				+ "\nTel no.: " + i.getPersonTelNo() 
+				+ "\nE-mail Address: " + i.getPersonEmail() 
+				+ "\nAddress: " + i.getPersonAddress() + "\n");	
 		}
 	}
 	
 	/**
-	 * Display details of the projects
+	 * Displays details of the projects
 	 * @param projectArray String array list for project object details
 	 */
 	private static void displayProject(ArrayList<Project> projectArray) {
 		for (Project i: projectArray) {
-			System.out.println("Project number: " + i.getProjNum() + "\nProject name: " + i.getProjName() 
-				+ "\nBuilding Type: " + i.getBuildType() + "\nBuilding address: " + i.getProjAddress() 
-				+ "\nERF number: " + i.getErfNum() + "\nTotal Fee: " + i.getTotalFee() + "\nFees paid to date: " 
-				+ i.getPaidToDate() + "\nProject due date: " + i.getDueDate() + "\nProject status: " + i.getProjStatus()
-				+ "\nCompletion Date: " + i.getComplDate()+ "\nContractor: " + i.getContractor()
-				+ "\nArchitect: " + i.getArchitect() + "\nCustomer: " + i.getCustomer() + "\n");	
+			System.out.println(
+				"Project number: " + i.getProjNum() 
+				+ "\nProject name: " + i.getProjName() 
+				+ "\nBuilding Type: " + i.getBuildType() 
+				+ "\nBuilding address: " + i.getProjAddress() 
+				+ "\nERF number: " + i.getErfNum() 
+				+ "\nTotal Fee: " + i.getTotalFee() 
+				+ "\nFees paid to date: " + i.getPaidToDate() 
+				+ "\nProject due date: " + i.getDueDate() 
+				+ "\nProject status: " + i.getProjStatus()
+				+ "\nCompletion Date: " + i.getComplDate()
+				+ "\nContractor ID: " + i.getContractorID()
+				+ "\nArchitect ID: " + i.getArchitectID() 
+				+ "\nCustomer ID: " + i.getCustomerID() + "\n");	
 		}	
 	}
 	
@@ -653,12 +735,18 @@ public class ProjManagementSys {
 
 		for (Project i: projectArray) {
 			if (i.getProjStatus().equals("Ongoing")) {	
-				System.out.println("Project number: " + i.getProjNum() + "\nProject name: " + i.getProjName() 
-				+ "\nBuilding Type: " + i.getBuildType() + "\nBuilding address: " + i.getProjAddress() 
-				+ "\nERF number: " + i.getErfNum() + "\nTotal Fee: " + i.getTotalFee() + "\nFees paid to date: " 
-				+ i.getPaidToDate() + "\nProject due date: " + i.getDueDate() + "\nCompletion Date: " + i.getComplDate()
-				+ "\nContractor: " + i.getContractor() + "\nArchitect: " + i.getArchitect() + "\nCustomer: " 
-				+ i.getCustomer() + "\n");		
+				System.out.println("Project number: " + i.getProjNum() 
+				+ "\nProject name: " + i.getProjName() 
+				+ "\nBuilding Type: " + i.getBuildType() 
+				+ "\nBuilding address: " + i.getProjAddress() 
+				+ "\nERF number: " + i.getErfNum() 
+				+ "\nTotal Fee: " + i.getTotalFee() 
+				+ "\nFees paid to date: " + i.getPaidToDate() 
+				+ "\nProject due date: " + i.getDueDate() 
+				+ "\nCompletion Date: " + i.getComplDate()
+				+ "\nContractor ID: " + i.getContractorID() 
+				+ "\nArchitect ID: " + i.getArchitectID() 
+				+ "\nCustomer ID: " + i.getCustomerID() + "\n");		
 			}						
 		}
 	}
@@ -677,10 +765,18 @@ public class ProjManagementSys {
 				LocalDate todaysDate = LocalDate.now();					
 				
 				if (dueDateFormat.isBefore(todaysDate) && i.getProjStatus().equals("Ongoing")) {
-					System.out.println("Project number: " + i.getProjNum() + "\nProject name: " + i.getProjName() + "\nBuilding Type: " + i.getBuildType()
-					+ "\nBuilding address: " + i.getProjAddress() + "\nERF number: " + i.getErfNum() + "\nTotal Fee: " + i.getTotalFee() + "\nFees paid to date: " + i.getPaidToDate()
-					+ "\nProject due date: " + i.getDueDate() + "\nCompletetion Date: " + i.getComplDate()+ "\nContractor: " + i.getContractor()
-					+ "\nArchitect: " + i.getArchitect() + "\nCustomer: " + i.getCustomer() + "\n");								
+					System.out.println("Project number: " + i.getProjNum() 
+					+ "\nProject name: " + i.getProjName() 
+					+ "\nBuilding Type: " + i.getBuildType()
+					+ "\nBuilding address: " + i.getProjAddress() 
+					+ "\nERF number: " + i.getErfNum() 
+					+ "\nTotal Fee: " + i.getTotalFee() 
+					+ "\nFees paid to date: " + i.getPaidToDate()
+					+ "\nProject due date: " + i.getDueDate() 
+					+ "\nCompletetion Date: " + i.getComplDate()
+					+ "\nContractor ID: " + i.getContractorID()
+					+ "\nArchitect ID: " + i.getArchitectID() 
+					+ "\nCustomer ID: " + i.getCustomerID() + "\n");								
 				}							
 			}
 		}
@@ -692,38 +788,5 @@ public class ProjManagementSys {
 			System.out.println();
 			e.printStackTrace();
 		}
-	}
-	
-	/** 
-	 * Writes to person and project text files
-	 * @param personArray String array list for person object details
-	 * @param projectArray String array list for project object details
-	 */
-	private static void writeToFiles(ArrayList<Person> personArray, ArrayList<Project> projectArray) {
-		
-		try {
-			Formatter outProjectFile = new Formatter("C:\\Users\\Tash\\Documents\\Software Engineering bootcamp"
-					+ "\\Introduction to Software engineering\\Task 24\\projects.txt\\");
-			Formatter outPersonFile = new Formatter("C:\\Users\\Tash\\Documents\\Software Engineering bootcamp"
-							+ "\\Introduction to Software engineering\\Task 24\\persons.txt\\");
-			
-			for (int i = 0; i < projectArray.size(); i++) {
-				outProjectFile.format(projectArray.get(i).toString());
-			}
-			
-			for (int i = 0; i < personArray.size(); i++) {
-				outPersonFile.format(personArray.get(i).toString());
-			}
-			outProjectFile.close();
-			outPersonFile.close();
-		}
-		
-		catch (FileNotFoundException e) {
-			System.out.println("File cannot be opened or not found.");
-			System.out.println();
-			System.out.println(e.getMessage());
-			System.out.println();
-			e.printStackTrace();
-		}
-	}	
-}
+	}		
+}	
